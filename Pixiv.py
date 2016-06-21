@@ -125,17 +125,7 @@ def download_threading(download_queue, save_path='.', add_rank=False, refresh=Fa
                     r = requests.get(url, headers=headers, stream=True, timeout=PixivApi.timeout)
                     if r.status_code == requests.codes.ok:
                         with open(file_path, 'wb') as f:
-                            total_length = r.headers.get('content-length')
-                            if total_length:
-                                data = []
-                                for chunk in r.iter_content(1024 * 60):
-                                    data.append(chunk)
-                                    with _SPEED_LOCK:
-                                        global _Global_Download
-                                        _Global_Download += len(chunk)
-                                map(f.write, data)
-                            else:
-                                f.write(r.content)
+                            f.write(r.content)
                     else:
                         raise ConnectionError(_('Connection error: %s') % r.status_code)
             except KeyboardInterrupt:

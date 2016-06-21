@@ -287,8 +287,16 @@ def remove_repeat(user):
                                 os.remove(os.path.join(path, f))
 
 
-def parse_arguments(args):
-    """parse program argument."""
+def parse_arguments(args=None, return_parser_only=False):
+    """parse program argument.
+
+    :param args: arguments input given to program.
+    :param return_parser_only: return parser obj rather than parser result.
+    :type args: list
+    :type return_parser_only: bool
+    :return parser: if return_parser_only is true, this will be given,
+    if not the result of the parser will be given instead
+    """
     parser = argparse.ArgumentParser(
         description='A simple tool to download all illustrations from specific illustrator.'
     )
@@ -321,7 +329,10 @@ def parse_arguments(args):
     )
     parser.set_defaults(remove_repeat=False)
 
-    return parser.parse_args(args)
+    if return_parser_only:
+        return parser
+    else:
+        return parser.parse_args(args)
 
 def main(args):
     print(_(' Pixiv Downloader 2.3 ').center(77, '#'))

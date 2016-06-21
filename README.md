@@ -3,7 +3,7 @@
 
 A simple tool to download all illustrations from specific illustrator.
 
-Download illustrations by **uers\_id**, **daily ranking** or **history ranking**.
+Download illustrations by **user's id**, **daily ranking** or **history ranking**.
 
 ---
 
@@ -13,7 +13,8 @@ Download illustrations by **uers\_id**, **daily ranking** or **history ranking**
   - [x] Secure storage (not memory safe)
 - [x] Update downloaded artists
 - [x] Refresh downloaded artists
-- [x] Mutil-Language
+- [x] Multi-Language
+- [x] CLI Interface
 
 ## Requirement
 
@@ -28,6 +29,25 @@ pixiv.py
 
 ![img](https://raw.github.com/bebound/Pixiv/master/ScreenShot/4.png)
 
+
+## CLI Usage
+
+    usage: Pixiv.py [-h] [--download-by-user-id user-id] [--download-by-ranking]
+                [--download-by-history-ranking] [--update-exist]
+                [--refresh-exist] [--remove-repeat]
+
+optional arguments:
+
+    -h, --help            show this help message and exit
+    --download-by-user-id user-id
+                          Download by user id.
+    --download-by-ranking
+                          Download by ranking.
+    --download-by-history-ranking
+                          Download by history ranking.
+    --update-exist        Update existing collections.
+    --refresh-exist       Refresh existing collections.
+    --remove-repeat       Remove duplicate in collections.
 
 ## Credits
 - [Pixiv-API](https://github.com/twopon/Pixiv-API)

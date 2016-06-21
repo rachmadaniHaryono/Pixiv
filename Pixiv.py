@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import copy
 import datetime
 import math
@@ -208,9 +209,18 @@ def download_illustrations(data_list, save_path='.', add_user_folder=False, add_
         print(_('There is no new illustration need to download'))
 
 
-def download_by_user_id(user):
+def download_by_user_id(user, user_id=None):
+    """Download by user id.
+
+    :param user: user login obj.
+    :param user_id: default user_id. if this is existed no input of user_id is required.
+    """
     save_path = get_default_save_path()
-    user_ids = input(_('Input the artist\'s id:(separate with space)'))
+    if user_id is None:
+        user_ids = input(_('Input the artist\'s id:(separate with space)'))
+    else:
+        # single user_id given
+        user_ids = user_id
     for user_id in user_ids.split(' '):
         print(_('Artists %s\n') % user_id)
         data_list = user.get_user_illustrations(user_id)
@@ -277,9 +287,60 @@ def remove_repeat(user):
                                 os.remove(os.path.join(path, f))
 
 
-def main():
+def parse_arguments(args):
+    """parse program argument."""
+    parser = argparse.ArgumentParser(
+        description='A simple tool to download all illustrations from specific illustrator.'
+    )
+    parser.add_argument(
+        '--download-by-user-id', metavar='user-id', type=str, help='Download by user id.'
+    )
+    parser.add_argument(
+        '--download-by-ranking', help='Download by ranking.',
+        dest='download_by_ranking', action='store_true'
+    )
+    parser.set_defaults(download_by_ranking=False)
+    parser.add_argument(
+        '--download-by-history-ranking', help='Download by history ranking.',
+        dest='download_by_history_ranking', action='store_true'
+    )
+    parser.set_defaults(download_by_history_ranking=False)
+    parser.add_argument(
+        '--update-exist', help='Update existing collections.',
+        dest='update_exist', action='store_true'
+    )
+    parser.set_defaults(update_exist=False)
+    parser.add_argument(
+        '--refresh-exist', help='Refresh existing collections.',
+        dest='refresh_exist', action='store_true'
+    )
+    parser.set_defaults(refresh_exist=False)
+    parser.add_argument(
+        '--remove-repeat', help='Remove duplicate in collections.',
+        dest='remove_repeat', action='store_true'
+    )
+    parser.set_defaults(remove_repeat=False)
+
+    return parser.parse_args(args)
+
+def main(args):
     print(_(' Pixiv Downloader 2.3 ').center(77, '#'))
     user = PixivApi()
+    # run the command line argument if given.
+    if len(sys.argv) > 1:
+        if args.download_by_user_id:
+            download_by_user_id(user, args.download_by_user_id)
+        elif args.download_by_ranking:
+            download_by_ranking(user)
+        elif args.download_by_history_ranking:
+            download_by_history_ranking(user)
+        elif args.update_exist:
+            update_exist(user)
+        elif args.refresh_exist:
+            refresh_exist(user)
+        elif args.remove_repeat:
+            remove_repeat(user)
+
     options = {
         '1': download_by_user_id,
         '2': download_by_ranking,
@@ -305,4 +366,5 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    args = parse_arguments(sys.argv[1:])
+    sys.exit(main(args))

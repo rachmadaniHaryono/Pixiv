@@ -33,7 +33,7 @@ Source = "https://github.com/bebound/pixiv"
 where = ["src"]
 
 [tool.setuptools.package-data]
-pixivd = ['src/pixivd/local/*']
+pixivd = ['locale/**/*']
 
 [dependency-groups]
 dev = [

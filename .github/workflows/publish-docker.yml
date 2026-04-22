@@ -1,4 +1,4 @@
-name: Publish to PyPI and ghcr.io
+name: Publish Docker image to GHCR
 
 on:
   push:
@@ -7,34 +7,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-publish-pypi:
-    name: Build and publish to PyPI
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/pixivd
-
-    permissions:
-      id-token: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-
-    - name: Build
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-        python -m build
-
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-
   build-and-push-docker:
     name: Build and push Docker image to GHCR
     runs-on: ubuntu-latest
@@ -75,3 +47,4 @@ jobs:
         tags: |
           ghcr.io/bebound/pixivd:latest
           ghcr.io/bebound/pixivd:${{ steps.version.outputs.version }}
+

@@ -1,12 +1,13 @@
-name: Publish to PyPI
+name: Publish to PyPI and ghcr.io
 
 on:
   push:
     branches:
     - release
+  workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build-and-publish-pypi:
     name: Build and publish to PyPI
     runs-on: ubuntu-latest
     environment:
@@ -33,3 +34,37 @@ jobs:
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+
+  build-and-push-docker:
+    name: Build and push Docker image to GHCR
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract version from pixivd.py
+      id: version
+      run: |
+        VERSION=$(grep "^__version__" src/pixivd/pixivd.py | sed "s/__version__ = '\\(.*\\)'/\1/")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/bebound/pixivd:latest
+          ghcr.io/bebound/pixivd:${{ steps.version.outputs.version }}

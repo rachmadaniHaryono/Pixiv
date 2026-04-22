@@ -32,7 +32,7 @@ class PixivApi:
     client_id = 'MOBrBDS8blbauoSck0ZfDbtuzpyT'
     client_secret = 'lsACyCD94FhDUtGTXi3QzcFE2uU1hqtDaKeqrdwj'
     auth_token_url = 'https://oauth.secure.pixiv.net/auth/token'
-    session_path = Path(__file__).parent / 'data' / 'session'
+    session_path = Path('./') / 'data' / 'session'
 
     def __init__(self):
         self.ensure_session_dir()

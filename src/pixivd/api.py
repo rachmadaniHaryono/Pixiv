@@ -10,8 +10,6 @@ from urllib.parse import urlencode
 import requests
 from pixivpy3 import AppPixivAPI
 
-from .i18n import i18n as _
-
 
 class PixivApi:
     """
@@ -139,7 +137,7 @@ class PixivApi:
                 self.refresh()
 
         if not self.access_token:
-            print(_('Please login'))
+            print('Please login')
             self.login()
 
     def get_all_user_illustrations(self, user_id, offset=0, size=-1):

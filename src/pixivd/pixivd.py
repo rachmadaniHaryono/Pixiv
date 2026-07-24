@@ -14,7 +14,7 @@ import requests
 from tqdm import tqdm
 
 from .api import PixivApi
-from .i18n import i18n as _
+
 from .model import PixivIllustModel
 
 _THREADING_NUMBER = 10
@@ -101,7 +101,7 @@ def download_file(url, filepath):
             with open(filepath, 'wb') as f:
                 list(map(f.write, data))
     else:
-        raise ConnectionError('\r', _('Connection error: %s') % r.status_code)
+        raise ConnectionError('\r', 'Connection error: %s' % r.status_code)
 
 
 def download_threading(download_queue):
@@ -123,7 +123,7 @@ def download_threading(download_queue):
                         _finished_download += 1
                 except Exception as e:
                     if count < _MAX_ERROR_COUNT:
-                        print(_('%s => %s download error, retry') % (e, filename))
+                        print('%s => %s download error, retry' % (e, filename))
                         download_queue.put(illustration)
                         _error_count[url] = count + 1
         else:
@@ -218,22 +218,22 @@ def download_illustrations(api, data_list, save_path='.', add_user_folder=False,
             illustrations = list(filter(lambda x: not is_manga(x), illustrations))
     download_queue, count = check_files(illustrations, save_path, add_user_folder, add_rank)[0:2]
     if count > 0:
-        print(_('Start download, total illustrations '), count)
+        print('Start download, total illustrations ', count)
         global _finished_download, _Global_Download
         _finished_download = 0
         _Global_Download = 0
         start_and_wait_download_threading(download_queue, count)
         print()
     else:
-        print(_('There is no new illustration need to download'))
+        print('There is no new illustration need to download')
 
 
 def download_by_user_id(api, user_ids=None):
     save_path = get_default_save_path()
     if not user_ids:
-        user_ids = input(_('Input the artist\'s id(separate with space):')).strip().split(' ')
+        user_ids = input('Input the artist\'s id(separate with space):').strip().split(' ')
     for user_id in user_ids:
-        print(_('Artists %s') % user_id)
+        print('Artists %s' % user_id)
         data_list = api.get_all_user_illustrations(user_id)
         download_illustrations(api, data_list, save_path, add_user_folder=True)
 
@@ -247,9 +247,9 @@ def download_by_ranking(api):
 
 def download_by_history_ranking(api, date=''):
     if not date:
-        date = input(_('Input the date:(eg:2015-07-10)'))
+        date = input('Input the date:(eg:2015-07-10)')
     if not (re.search(r"^\d{4}-\d{2}-\d{2}", date)):
-        print(_('[invalid date format]'))
+        print('[invalid date format]')
         date = str(datetime.date.today() - datetime.timedelta(days=1))
     save_path = os.path.join(get_default_save_path(), date + ' ranking')
     data_list = api.get_ranking_illustrations(date=date)
@@ -282,9 +282,9 @@ def artist_folder_scanner(api, user_id_list, save_path, final_list, fast):
             count, checked_list = check_files(illustrations, save_path, add_user_folder=True, add_rank=False)[1:3]
             if len(sys.argv) < 2 or count:
                 try:
-                    print(_('Artists %s [%s]') % (folder, count))
+                    print('Artists %s [%s]' % (folder, count))
                 except UnicodeError:
-                    print(_('Artists %s ?? [%s]') % (user_id, count))
+                    print('Artists %s ?? [%s]' % (user_id, count))
             with _PROGRESS_LOCK:
                 for index in checked_list:
                     final_list.append(data_list[index])
@@ -315,7 +315,7 @@ def update_exist(api, fast=True):
 
 def remove_repeat(_):
     """Delete xxxxx.img if xxxxx_p0.img exist"""
-    choice = input(_('Dangerous Action: continue?(y/n)'))
+    choice = input('Dangerous Action: continue?(y/n)')
     if choice == 'y':
         illust_path = get_default_save_path()
         for folder in os.listdir(illust_path):
@@ -357,7 +357,7 @@ def main():
             print(datetime.datetime.now().strftime('%X %x'))
         else:
             api = PixivApi()
-            print(_(f' Pixiv Downloader {__version__}').center(77, '#'))
+            print(f' Pixiv Downloader {__version__}'.center(77, '#'))
             options = {
                 '1': download_by_user_id,
                 '2': download_by_ranking,
@@ -366,22 +366,22 @@ def main():
                 '5': remove_repeat
             }
             while True:
-                print(_('Which do you want to:'))
+                print('Which do you want to:')
                 for i in sorted(options.keys()):
-                    print('\t %s %s' % (i, _(options[i].__name__).replace('_', ' ')))
-                choose = input('\t e %s \n:' % _('exit'))
+                    print('\t %s %s' % (i, options[i].__name__.replace('_', ' ')))
+                choose = input('\t e %s \n:' % 'exit')
                 if choose in [str(i) for i in range(1, len(options) + 1)]:
-                    print((' ' + _(options[choose].__name__).replace('_', ' ') + ' ').center(60, '#') + '\n')
+                    print((' ' + options[choose].__name__.replace('_', ' ') + ' ').center(60, '#') + '\n')
                     if choose == 4:
                         options[choose](api, False)
                     else:
                         options[choose](api)
-                    print('\n' + (' ' + _(options[choose].__name__).replace('_', ' ') + _(' finished ')).center(60,
+                    print('\n' + (' ' + options[choose].__name__.replace('_', ' ') + ' finished ').center(60,
                                                                                                             '#') + '\n')
                 elif choose == 'e':
                     break
                 else:
-                    print(_('Wrong input!'))
+                    print('Wrong input!')
     except (KeyboardInterrupt, EOFError):
         sys.exit(0)
 

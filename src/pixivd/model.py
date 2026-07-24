@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
 
-class PixivModel(object):
+class PixivModel:
     """
     store illust/novel data
 
@@ -13,7 +13,6 @@ class PixivModel(object):
     @abstractmethod
     def from_data(self, data):
         """parse the data to a dict"""
-        pass
 
 
 class PixivIllustModel(PixivModel):

@@ -22,8 +22,8 @@ class PixivApi:
     user_agent = 'PixivIOSApp/6.4.0'
     session = ''
     user_id = ''
-    image_sizes = ','.join(['px_128x128', 'px_480mw', 'small', 'medium', 'large'])
-    profile_image_sizes = ','.join(['px_170x170', 'px_50x50'])
+    image_sizes = 'px_128x128,px_480mw,small,medium,large'
+    profile_image_sizes = 'px_170x170,px_50x50'
     timeout = 20
     access_token = ''
     refresh_token = ''
@@ -132,9 +132,8 @@ class PixivApi:
         self.save_session()
 
     def login_required(self):
-        if self.session_path.exists():
-            if self.load_session():
-                self.refresh()
+        if self.session_path.exists() and self.load_session():
+            self.refresh()
 
         if not self.access_token:
             print('Please login')
@@ -239,10 +238,7 @@ class PixivApi:
 
         while not done:
             data = self.aapi.user_illusts(user_id, offset=offset)
-            try:
-                r.extend(data['illusts'])
-            except:
-                print(data)
+            r.extend(data['illusts'])
             offset += 30
             cur_size += 30
             if not data['next_url'] or (0 <= size <= cur_size):

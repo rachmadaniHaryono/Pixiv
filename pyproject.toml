@@ -44,3 +44,6 @@ version = {attr = "pixivd.pixivd.__version__"}
 
 [project.scripts]
 pixivd = "pixivd.pixivd:main"
+
+[tool.ruff.lint]
+ignore = ["DTZ005"]

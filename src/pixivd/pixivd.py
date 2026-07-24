@@ -8,13 +8,11 @@ import re
 import sys
 import threading
 import time
-import traceback
 
 import requests
 from tqdm import tqdm
 
 from .api import PixivApi
-
 from .model import PixivIllustModel
 
 _THREADING_NUMBER = 10
@@ -66,15 +64,14 @@ def get_speed(elapsed):
         _Global_Download = 0
     speed = down / elapsed
     if speed == 0:
-        return '%8.2f /s' % 0
+        return f'{0:8.2f} /s'
     units = [' B', 'KB', 'MB', 'GB', 'TB', 'PB']
     unit = math.floor(math.log(speed, 1024.0))
     speed /= math.pow(1024.0, unit)
-    return '%6.2f %s/s' % (speed, units[unit])
+    return f'{speed:6.2f} {units[unit]}/s'
 
 
 def print_progress(max_size):
-    global _finished_download
     pbar = tqdm(total=max_size)
 
     last = 0
@@ -101,7 +98,7 @@ def download_file(url, filepath):
             with open(filepath, 'wb') as f:
                 list(map(f.write, data))
     else:
-        raise ConnectionError('\r', 'Connection error: %s' % r.status_code)
+        raise ConnectionError('\r', f'Connection error: {r.status_code}')
 
 
 def download_threading(download_queue):
@@ -121,9 +118,9 @@ def download_threading(download_queue):
                     download_file(url, filepath)
                     with _PROGRESS_LOCK:
                         _finished_download += 1
-                except Exception as e:
+                except Exception as e:                         # noqa: BLE001
                     if count < _MAX_ERROR_COUNT:
-                        print('%s => %s download error, retry' % (e, filename))
+                        print(f'{e} => {filename} download error, retry')
                         download_queue.put(illustration)
                         _error_count[url] = count + 1
         else:
@@ -159,7 +156,7 @@ def get_filepath(url, illustration, save_path='.', add_user_folder=False, add_ra
         if user_id not in cur_user_ids:
             dir_name = re.sub(r'[<>:"/\\|\?\*]', ' ', user_id + ' ' + user_name)
         else:
-            dir_name = list(i for i in cur_dirs if os.path.basename(i).split()[0] == user_id)[0]
+            dir_name = next(i for i in cur_dirs if os.path.basename(i).split()[0] == user_id)
         save_path = os.path.join(save_path, dir_name)
 
     filename = url.split('/')[-1]
@@ -197,7 +194,7 @@ def count_illustrations(illustrations):
 
 
 def is_manga(illustrate):
-    return True if illustrate.is_manga or illustrate.type == 'manga' else False
+    return bool(illustrate.is_manga or illustrate.type == 'manga')
 
 
 def download_illustrations(api, data_list, save_path='.', add_user_folder=False, add_rank=False, skip_manga=False):
@@ -233,13 +230,13 @@ def download_by_user_id(api, user_ids=None):
     if not user_ids:
         user_ids = input('Input the artist\'s id(separate with space):').strip().split(' ')
     for user_id in user_ids:
-        print('Artists %s' % user_id)
+        print(f'Artists {user_id}')
         data_list = api.get_all_user_illustrations(user_id)
         download_illustrations(api, data_list, save_path, add_user_folder=True)
 
 
 def download_by_ranking(api):
-    today = str(datetime.date.today())
+    today = str(datetime.datetime.now().date())
     save_path = os.path.join(get_default_save_path(), today + ' ranking')
     data_list = api.get_ranking_illustrations()
     download_illustrations(api, data_list, save_path, add_rank=True)
@@ -250,7 +247,7 @@ def download_by_history_ranking(api, date=''):
         date = input('Input the date:(eg:2015-07-10)')
     if not (re.search(r"^\d{4}-\d{2}-\d{2}", date)):
         print('[invalid date format]')
-        date = str(datetime.date.today() - datetime.timedelta(days=1))
+        date = str(datetime.datetime.now().date() - datetime.timedelta(days=1))
     save_path = os.path.join(get_default_save_path(), date + ' ranking')
     data_list = api.get_ranking_illustrations(date=date)
     download_illustrations(api, data_list, save_path, add_rank=True)
@@ -261,35 +258,32 @@ def artist_folder_scanner(api, user_id_list, save_path, final_list, fast):
         user_info = user_id_list.get()
         user_id = user_info['id']
         folder = user_info['folder']
-        try:
-            if fast:
-                data_list = []
-                offset = 0
-                page_result = api.get_all_user_illustrations(user_id, offset, _ILLUST_PER_PAGE)
-                if len(page_result) > 0:
+        if fast:
+            data_list = []
+            offset = 0
+            page_result = api.get_all_user_illustrations(user_id, offset, _ILLUST_PER_PAGE)
+            if len(page_result) > 0:
+                data_list.extend(page_result)
+                file_path = os.path.join(save_path, folder, data_list[-1]['image_urls']['large'].split('/')[-1])
+                while not os.path.exists(file_path) and len(page_result) == _ILLUST_PER_PAGE:
+                    offset += _ILLUST_PER_PAGE
+                    page_result = api.get_all_user_illustrations(user_id, offset, _ILLUST_PER_PAGE)
                     data_list.extend(page_result)
                     file_path = os.path.join(save_path, folder, data_list[-1]['image_urls']['large'].split('/')[-1])
-                    while not os.path.exists(file_path) and len(page_result) == _ILLUST_PER_PAGE:
-                        offset += _ILLUST_PER_PAGE
-                        page_result = api.get_all_user_illustrations(user_id, offset, _ILLUST_PER_PAGE)
-                        data_list.extend(page_result)
-                        file_path = os.path.join(save_path, folder, data_list[-1]['image_urls']['large'].split('/')[-1])
-                        # prevent rate limit
-                        time.sleep(1)
-            else:
-                data_list = api.get_all_user_illustrations(user_id)
-            illustrations = PixivIllustModel.from_data(data_list)
-            count, checked_list = check_files(illustrations, save_path, add_user_folder=True, add_rank=False)[1:3]
-            if len(sys.argv) < 2 or count:
-                try:
-                    print('Artists %s [%s]' % (folder, count))
-                except UnicodeError:
-                    print('Artists %s ?? [%s]' % (user_id, count))
-            with _PROGRESS_LOCK:
-                for index in checked_list:
-                    final_list.append(data_list[index])
-        except Exception:
-            traceback.print_exc()
+                    # prevent rate limit
+                    time.sleep(1)
+        else:
+            data_list = api.get_all_user_illustrations(user_id)
+        illustrations = PixivIllustModel.from_data(data_list)
+        count, checked_list = check_files(illustrations, save_path, add_user_folder=True, add_rank=False)[1:3]
+        if len(sys.argv) < 2 or count:
+            try:
+                print(f'Artists {folder} [{count}]')
+            except UnicodeError:
+                print(f'Artists {user_id} ?? [{count}]')
+        with _PROGRESS_LOCK:
+            for index in checked_list:
+                final_list.append(data_list[index])
         user_id_list.task_done()
 
 
@@ -319,16 +313,14 @@ def remove_repeat(_):
     if choice == 'y':
         illust_path = get_default_save_path()
         for folder in os.listdir(illust_path):
-            if os.path.isdir(os.path.join(illust_path, folder)):
-                if re.search(r'^(\d+) ', folder):
-                    path = os.path.join(illust_path, folder)
-                    for file_name in os.listdir(path):
-                        illustration_id = re.search(r'^\d+\.', file_name)
-                        if illustration_id:
-                            if os.path.isfile(os.path.join(path
-                                    , illustration_id.string.replace('.', '_p0.'))):
-                                os.remove(os.path.join(path, file_name))
-                                print('Delete', os.path.join(path, file_name))
+            if os.path.isdir(os.path.join(illust_path, folder)) and re.search(r'^(\d+) ', folder):
+                path = os.path.join(illust_path, folder)
+                for file_name in os.listdir(path):
+                    illustration_id = re.search(r'^\d+\.', file_name)
+                    if illustration_id and os.path.isfile(os.path.join(path
+                                , illustration_id.string.replace('.', '_p0.'))):
+                        os.remove(os.path.join(path, file_name))
+                        print('Delete', os.path.join(path, file_name))
 
 
 def main():
@@ -357,7 +349,7 @@ def main():
             print(datetime.datetime.now().strftime('%X %x'))
         else:
             api = PixivApi()
-            print(f' Pixiv Downloader {__version__}'.center(77, '#'))
+            print(f' Pixiv Downloader {__version__} '.center(80, '#'))
             options = {
                 '1': download_by_user_id,
                 '2': download_by_ranking,
@@ -368,8 +360,8 @@ def main():
             while True:
                 print('Which do you want to:')
                 for i in sorted(options.keys()):
-                    print('\t %s %s' % (i, options[i].__name__.replace('_', ' ')))
-                choose = input('\t e %s \n:' % 'exit')
+                    print('\t {} {}'.format(i, options[i].__name__.replace('_', ' ')))
+                choose = input('\t e {} \n:'.format('exit'))
                 if choose in [str(i) for i in range(1, len(options) + 1)]:
                     print((' ' + options[choose].__name__.replace('_', ' ') + ' ').center(60, '#') + '\n')
                     if choose == 4:
@@ -377,7 +369,7 @@ def main():
                     else:
                         options[choose](api)
                     print('\n' + (' ' + options[choose].__name__.replace('_', ' ') + ' finished ').center(60,
-                                                                                                            '#') + '\n')
+                                                                                                          '#') + '\n')
                 elif choose == 'e':
                     break
                 else:

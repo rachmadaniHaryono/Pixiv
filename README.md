@@ -14,11 +14,7 @@ Download illustrations by **uers\_id**, **daily ranking** or **history ranking**
 ## Features
 
 - [x] Keep login sessions
-    - [x] Local storage
-    - [x] Secure storage (not memory safe)
-- [x] Update downloaded artists
 - [x] Refresh downloaded artists
-- [x] Mutil-Language
 - [x] Command-line interface
 - [x] Docker image
 
@@ -54,7 +50,7 @@ Examples:
     pixivd -r -d 2016-09-24
 ```
 
-The illusts will be downloaded to `illustrations` folder in current directory.
+The illustrations will be downloaded to `illustrations` folder in current directory.
 
 ## Screenshot
 
@@ -66,4 +62,3 @@ The illusts will be downloaded to `illustrations` folder in current directory.
 - [PixivPy](https://github.com/upbit/pixivpy)
 - [pixiv api](https://danbooru.donmai.us/wiki_pages/58938)
 - [Pixiv OAuth Flow](https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362)
-
